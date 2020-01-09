@@ -1,0 +1,239 @@
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+import sys
+from docx import Document
+
+class Ui_MainWindow(QWidget):
+    version_list = ['请选择','mysql','oracle']
+    def __init__(self):
+        super(Ui_MainWindow,self).__init__()
+        #窗体设置，标题设置
+        self.title = "建表小工具"
+        #设置窗体开始在桌面的位置
+        self.X = 1200
+        self.Y = 500
+        #设置窗体大小
+        self.width = 750
+        self.height = 400
+        #设置背景颜色
+        self.palette = QPalette()
+        self.palette.setBrush(QPalette.Background,QBrush(QPixmap('bj02.png')))
+        self.setPalette(self.palette)
+        #设置icon
+        self.setWindowIcon(QIcon('Devices.ico'))
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.X, self.Y, self.width,self.height)
+        #设置标签
+        one_label=QLabel('文件路径:',self)
+        one_label.setGeometry(80,95,100,50)
+        tow_label=QLabel('保存路径:',self)
+        tow_label.setGeometry(80,145,100,50)
+        com_label=QLabel('选择版本:',self)
+        com_label.setGeometry(80,40,100,50)
+        #设置下拉框
+        self.combox = QComboBox(self)
+        self.combox.addItems(self.version_list)
+        self.combox.currentIndexChanged.connect(self.list_change)
+        self.combox.setGeometry(180,45,400,35)
+
+
+
+        #设置文本框
+        self.one_text = QLineEdit(self)
+        self.one_text.setGeometry(180,100,400,35)
+        # 设置文本框
+        self.tow_text = QLineEdit(self)
+        self.tow_text.setGeometry(180, 150, 400, 35)
+
+
+
+        #self.tip_text = QLineEdit(self)
+        #self.tip_text.setGeometry(180,250,400,50)
+
+
+        #按钮设置
+        #设置文件选择按钮
+        one_btn = QPushButton('浏览',self)
+        one_btn.setToolTip('选择文件')
+
+        # 按钮背景设置
+        one_btn.setStyleSheet("QPushButton{background-color:pink}"
+                              "QPushButton:hover{color:red}")
+        one_btn.move(600,100)
+        one_btn.clicked.connect(self.on_click_one)
+
+        #设置文件保存按钮
+        tow_btn = QPushButton('浏览',self)
+        tow_btn.setToolTip('保存文件')
+
+        # 按钮背景设置
+        tow_btn.setStyleSheet("QPushButton{background-color:pink}"
+                              "QPushButton:hover{color:yellow}")
+        tow_btn.move(600, 150)
+        tow_btn.clicked.connect(self.on_click_tow)
+
+        #设置开始按钮
+        start_btn =  QPushButton('开始',self)
+        start_btn.setToolTip('开始生成建表语句')
+
+        # 按钮背景设置
+        start_btn.setStyleSheet("QPushButton{background-color:pink}"
+                                "QPushButton:hover{color:blue}")
+        start_btn.move(230, 200)
+        start_btn.clicked.connect(self.on_click_start)
+        #设置结束按钮
+        end_btn = QPushButton('退出', self)
+        end_btn.setToolTip('关闭窗口')
+
+        # 按钮背景设置
+        end_btn.setStyleSheet("QPushButton{background-color:pink}"
+                              "QPushButton:hover{color:green}")
+        end_btn.move(410, 200)
+        end_btn.clicked.connect(self.close)
+
+    def on_click_one(self):
+        global filename_1
+        filename_open= QFileDialog.getOpenFileName(self,'open file','C:/Users/Administrator/Desktop')
+        filename_1=filename_open[0]
+        print(filename_1)
+        self.one_text.setText(filename_1)
+
+    def on_click_tow(self):
+        global filename_2
+        filename_save= QFileDialog.getOpenFileName(self,'选择文件','C:/Users/Administrator/Desktop')
+        filename_2 = filename_save[0]
+        print(filename_2)
+        self.tow_text.setText(filename_2)
+
+    def list_change(self,i):
+        global version_path
+        if i==1:
+            version_path="mysql"
+            print(version_path)
+        elif i ==2:
+            version_path="oracle"
+            print(version_path)
+    #开始功能
+    def on_click_start(self):
+        save_txt_path = filename_2
+        file = open(save_txt_path, 'a')
+        doc = Document(filename_1)
+        tb = doc.tables
+        rows=[]
+        if version_path==0:
+            message='请选择版本'
+        elif version_path=='mysql':
+            message='准备生成mysql建表语句'
+            for i in range(len(tb)):
+                list = []
+                word = []
+                flag = 0
+                table = tb[i].rows
+                i_table = table[0].cells
+                list = i_table[1].text.split()  # 判断单元格中的内容是否有空格
+                table_name_yw = list[0]
+                table_name_zw = list[1]
+                file.write("-- " + table_name_zw + '\n')
+                file.write("create table " + table_name_yw + "(\n")
+                for j in range(len(table) - 2):
+                    cols = table[j + 2].cells
+                    key_mz = cols[1].text
+                    key_sy = cols[2].text
+                    key_lx = cols[3].text
+                    key_bz = cols[5].text
+                    if key_lx == 'D':
+                        key_lx = 'DATE'
+                    if key_lx == 'T':
+                        key_lx = 'DATETIME'
+                    if key_lx == 'DT':
+                        key_lx = 'DATETIME'
+                    if key_lx[0:1] == "N" :
+                        key_lx = key_lx.replace("N", "DECIMAL")
+                    if key_lx[0:1] == 'V':
+                        key_lx = key_lx.replace("V", "VARCHAR")
+                    if key_lx[0:1] == 'C':
+                        key_lx = key_lx.replace("C", "CHAR")
+                    file.write(key_mz + " " + key_lx + " comment'" + key_sy + "',\n")
+                    if key_bz == "主键":
+                        word.append(key_mz)
+                        flag = flag + 1
+                if flag == 1:
+                    file.write("PRIMARY KEY(" + word[0] + ")\n);\n")
+                if flag == 2:
+                    file.write("PRIMARY KEY(" + word[0] + "," + word[1] + ")\n);\n")
+                if flag == 3:
+                    file.write("PRIMARY KEY(" + word[0] + "," + word[1] +","+ word[2] + ")\n);\n")
+                if flag == 4:
+                    file.write("PRIMARY KEY(" + word[0] + "," + word[1] +","+ word[2] +","+ word[3] + ")\n);\n")
+                file.write("ALTER TABLE " + table_name_yw + " COMMENT=" + "'" + table_name_zw + "';\n")
+        elif version_path=='oracle':
+            message='准备生成mysql建表语句'
+            for i in range(len(tb)):
+                table = tb[i].rows
+                i_table = table[0].cells
+                list = i_table[1].text.split()  # 判断单元格中的内容是否有空格
+                table_name_yw = list[0]
+                table_name_zw = list[1]
+                file.write("--" + table_name_zw + '\n')
+                file.write("create table " + table_name_yw + "(\n")
+                id_key = table[2].cells
+                id_name = id_key[1].text
+                id_lx = id_key[3].text
+                if id_lx == 'D':
+                    id_lx = 'DATE'
+                if id_lx == 'T':
+                    id_lx = 'TIMESTAMP'
+                if id_lx[0:1] == "N":
+                    id_lx = id_lx.replace("N", "NUMBER")
+                if id_lx[0:2] == 'VC':
+                    id_lx = id_lx.replace("VC", "VARCHAR2")
+                if id_lx[0:1] == 'C':
+                    id_lx = id_lx.replace("C", "CHAR")
+                file.write(id_name + " " + id_lx + " CONSTRAINT PK_" + table_name_yw + " PRIMARY KEY,\n")
+
+                for j in range(len(table) - 3):
+                    cols = table[j + 3].cells
+                    key_mz = cols[1].text
+                    key_lx = cols[3].text
+                    if j < len(table) - 4:
+                        if key_lx == 'D':
+                            key_lx = 'DATE'
+                        if key_lx == 'T':
+                            key_lx = 'TIMESTAMP'
+                        if key_lx[0:1] == "N":
+                            key_lx = key_lx.replace("N", "NUMBER")
+                        if key_lx[0:2] == 'VC':
+                             key_lx = key_lx.replace("VC", "VARCHAR2")
+                        if key_lx[0:1] == 'C':
+                            key_lx = key_lx.replace("C", "CHAR")
+                        file.write(key_mz + " " + key_lx + ",\n")
+                    else:
+                        if key_lx == 'D':
+                            key_lx = 'DATE'
+                        if key_lx == 'T':
+                            key_lx = 'TIMESTAMP'
+                        if key_lx[0:1] == "N":
+                            key_lx = key_lx.replace("N", "NUMBER")
+                        if key_lx[0:2] == 'VC':
+                             key_lx = key_lx.replace("VC", "VARCHAR2")
+                        if key_lx[0:1] == 'C':
+                             key_lx = key_lx.replace("C", "CHAR")
+                        file.write(key_mz + " " + key_lx + "\n);\n")
+                file.write("comment on table " + table_name_yw + " IS " + "'" + table_name_zw + "';\n")
+                for j in range(len(table) - 2):
+                    cols = table[j + 2].cells
+                    key_mz = cols[1].text
+                    key_sy = cols[2].text
+                    file.write("comment on column " + table_name_yw + "." + key_mz + " IS " + "'" + key_sy + "'" + ";\n")
+
+
+
+
+if __name__=='__main__':
+    app = QApplication(sys.argv)
+    ex=Ui_MainWindow()
+    ex.show()
+    sys.exit(app.exec_())
